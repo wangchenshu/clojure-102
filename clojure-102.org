@@ -1,0 +1,156 @@
+* Clojure-102
+
+** 開始之前
+*** 安裝 Leiningen
+**** Install
+1. Download the [[https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein][lein script]] (or on Windows [[https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.bat][lein.bat]])
+2. Place it on your $PATH where your shell can find it (eg. ~/bin)
+3. Set it to be executable (chmod a+x ~/bin/lein)
+4. Run it (lein) and it will download the self-install package
+
+You can check your [[https://github.com/technomancy/leiningen/wiki/Packaging][package manager]] as well, but be sure you get version 2.x. 
+There's also an [[http://leiningen-win-installer.djpowell.net/][installer for Windows users]].
+
+**** Check install
+#+NAME: lein repl
+#+BEGIN_SRC
+⋊> ~ lein version                                                  
+Leiningen 2.6.0 on Java 1.8.0_25 Java HotSpot(TM) 64-Bit Server VM
+⋊> ~ lein repl
+nREPL server started on port 55836 on host 127.0.0.1 - nrepl://127.0.0.1:55836
+REPL-y 0.3.7, nREPL 0.2.12
+Clojure 1.8.0
+Java HotSpot(TM) 64-Bit Server VM 1.8.0_25-b17
+    Docs: (doc function-name-here)
+          (find-doc "part-of-name-here")
+  Source: (source function-name-here)
+ Javadoc: (javadoc java-object-or-class-here)
+    Exit: Control+D or (exit) or (quit)
+ Results: Stored in vars *1, *2, *3, an exception in *e
+
+user=> (println "hello, world!")
+hello, world!
+nil
+user=> (+ 1 2)
+3
+user=> (defn add
+  #_=>   [a b]
+  #_=>   (+ a b))
+#'user/add
+user=> (add 1 2)
+3
+user=> (do (println "hello~")
+  #_=>     (println "world!"))
+hello~
+world!
+nil
+user=> exit
+Bye for now!
+#+END_SRC
+
+** 原生數據
+*** 字串
+**** 使用範例
+#+NAME:
+#+BEGIN_SRC
+user=> (require '[clojure.string :as str])
+nil
+user=> (str/blank? "")
+true
+#+END_SRC
+
+**** 改變字串大小寫
+
+#+NAME:
+#+BEGIN_SRC
+;; 改變字串的第一個字符
+user=> (clojure.string/capitalize "hi! i am walter")
+"Hi! i am walter"
+
+;; 改變字串的所有大寫
+user=> (clojure.string/upper-case "become upper case")
+"BECOME UPPER CASE"
+
+;; 改變字串的所有小寫
+user=> (clojure.string/lower-case "BECOME LOWER CASE")
+"become lower case"
+
+#+END_SRC
+
+**** 清除字串的空白字符
+#+NAME:
+#+BEGIN_SRC
+;; 刪除首尾的所有空白字符
+user=> (clojure.string/trim " Hello, trim space ")
+"Hello, trim space"
+#+END_SRC
+
+**** 建立字串
+#+NAME:
+#+BEGIN_SRC
+;; 利用 str 建立字串
+user=> (str "hi" ", " "I " "am " "Walter")
+"hi, I am Walter"
+
+;; 利用 apply 建立字串
+user=> (apply str ["hi" ", " "I " "am " "Walter"])
+"hi, I am Walter"
+
+;; join
+user=> (clojure.string/join '[a b c d])
+"abcd"
+#+END_SRC
+
+**** 將字串做為字符序列
+#+NAME:
+#+BEGIN_SRC
+;; 字用 seq
+user=> (seq "hello, world!")
+(\h \e \l \l \o \, \space \w \o \r \l \d \!)
+
+;; 計算每個字符在字串中出現的次數
+user=> (frequencies (str "This " "is " "an " "apple"))
+{\space 3, \a 2, \e 1, \h 1, \i 2, \l 1, \n 1, \p 2, \s 2, \T 1}
+
+;; 判斷字串中的每個字符是否都是大寫
+user=> (defn is-upper? [s]
+  #_=>   (every? #(or (not (Character/isLetter %))
+  #_=>                (Character/isUpperCase %))
+  #_=>         s))
+#'user/is-upper?
+user=> (is-upper? "ALL UPPER")
+true
+user=> (is-upper? "all upper")
+false
+#+END_SRC
+
+**** 字符與數值轉換
+#+NAME:
+#+BEGIN_SRC
+;; 用 int 將字符轉成整數值
+user=> (int \a)
+97
+user=> (int \0)
+48
+user=> (map int "hello, world!")
+(104 101 108 108 111 44 32 119 111 114 108 100 33)
+
+;; 用 char 函數返回整數編碼值對應的字符
+user=> (int \a)
+97
+user=> (int \0)
+48
+user=> (map int "hello, world!")
+(104 101 108 108 111 44 32 119 111 114 108 100 33)
+user=> (char 97)
+\a
+user=> (char 48)
+\0
+user=> (reduce #(str %1 (char %2))
+  #_=>         ""
+  #_=>         [72 101 108 108 111])
+"Hello"
+#+END_SRC
+
+
+
