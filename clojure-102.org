@@ -2,7 +2,7 @@
 
 ** 開始之前
 *** 安裝 Leiningen
-**** Install
+**** 如何安裝
 1. Download the [[https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein][lein script]] (or on Windows [[https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein.bat][lein.bat]])
 2. Place it on your $PATH where your shell can find it (eg. ~/bin)
 3. Set it to be executable (chmod a+x ~/bin/lein)
@@ -11,7 +11,7 @@
 You can check your [[https://github.com/technomancy/leiningen/wiki/Packaging][package manager]] as well, but be sure you get version 2.x. 
 There's also an [[http://leiningen-win-installer.djpowell.net/][installer for Windows users]].
 
-**** Check install
+**** 檢查安裝
 #+NAME: lein repl
 #+BEGIN_SRC
 ⋊> ~ lein version                                                  
