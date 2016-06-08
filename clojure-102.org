@@ -436,3 +436,54 @@ user=> (mode [:walter :qq :walter :gg])
 user=> (mode [:walter :qq :walter :gg :qq])
 (:walter :qq)
 #+END_SRC
+
+**** 生成隨機數
+#+NAME:
+#+BEGIN_SRC
+user=> (rand)
+0.2824352415380432
+user=> (rand)
+0.8155379471470274
+
+;; 生成隨機整數
+user=> (inc (rand-int 6))
+6
+user=> (inc (rand-int 6))
+1
+user=> (inc (rand-int 6))
+5
+
+;; 從序列集合取得隨機元素
+user=> (rand-nth [1 2 3])
+3
+user=> (rand-nth [1 2 3])
+1
+user=> (rand-nth '(:a :b :c))
+:c
+user=> (rand-nth '(:a :b :c))
+:b
+
+;; 對 set 或 hashmap 取得隨機元素
+;; 如果單純使用的話，無法對 set 或 hashmap 起作用，請先使用 seq 將其轉成序列
+user=> (rand-nth (seq #{:walter :qq :gg :hello}))
+:walter
+user=> (rand-nth (seq #{:walter :qq :gg :hello}))
+:gg
+
+;; 隨機排列一個集合
+user=> (shuffle [1 2 3 4 5 6 7 8 9 0])
+[3 4 9 7 6 0 2 5 1 8]
+user=> (shuffle [1 2 3 4 5 6 7 8 9 0])
+[4 2 7 1 8 9 0 5 6 3]
+#+END_SRC
+
+**** 生成唯一ID
+#+NAME:
+#+BEGIN_SRC
+user=> (java.util.UUID/randomUUID)
+#uuid "cdeaf476-17d8-48e6-b8b3-841de13c9834"
+user=> (java.util.UUID/randomUUID)
+#uuid "0b66be93-e853-4f63-95e0-c3be5f9e9066"
+#+END_SRC
+
+*** 日期
