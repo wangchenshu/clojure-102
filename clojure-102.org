@@ -261,3 +261,178 @@ user=> (name :user/vaild?)
 user=> (namespace :user/vaild?)
 "user"
 #+END_SRC
+
+*** 數值
+**** 利用非常大或非常小的數來保持精度
+#+NAME:
+#+BEGIN_SRC
+;; 亞佛加厥常數
+user=> 6.0221413e23
+6.0221413E23
+
+user=> 1e-10
+1.0E-10
+
+;; 超過 long 的邊界，溢位錯誤
+user=> (* 9999 9999 9999 9999 9999)
+
+ArithmeticException integer overflow  clojure.lang.Numbers.throwIntOverflow (Numbers.java:1501)
+
+;; 使用引號提升到 Big 類型
+user=> (*' 9999 9999 9999 9999 9999)
+99950009999000049999N
+#+END_SRC
+
+**** 使用有理數
+#+NAME:
+#+BEGIN_SRC
+user=> (/ 1 4)
+1/4
+user=> (type (/ 1 4))
+clojure.lang.Ratio
+user=> (* 2 (/ 1 2))
+1N
+
+;; double 類型
+user=> (+ (/ 1 5) 0.7)
+0.8999999999999999
+
+;; 使用 rationalize 轉換成有理數，以免失去精度
+user=> (rationalize 0.7)
+7/10
+user=> (+ (/ 1 5) (rationalize 0.7))
+9/10
+#+END_SRC
+
+**** 解析數字
+#+NAME:
+#+BEGIN_SRC
+;; 使用 Integer/parseInt
+user=> (Integer/parseInt "33")
+33
+
+;; 使用 Double/parseDouble
+user=> (Double/parseDouble "3.14159")
+3.14159
+
+;; 高精度 使用 BigInteger
+user=> (bigint "1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890")
+1234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890N
+
+;; 高精度 使用 BigDecimal
+user=> (bigdec "3.141592653589793238462643383279502884197")
+3.141592653589793238462643383279502884197M
+#+END_SRC
+
+**** 數字的載斷和捨入
+#+NAME:
+#+BEGIN_SRC
+;; 強制轉成 int
+user=> (int 3.14)
+3
+user=> (int 1.9988776655)
+1
+
+;; 取四拾五入
+user=> (Math/round 3.14)
+3
+user=> (Math/round 1.9988776655)
+2
+
+;; 取得大於指定數的最小整數值
+user=> (Math/ceil 1.9988776655)
+2.0
+
+;; 取得小於指定數的最大整數值
+user=> (Math/floor 3.14)
+3.0
+#+END_SRC
+
+**** 三角函數
+#+NAME:
+#+BEGIN_SRC
+;; 計算 sin(a + b)
+;; sin(a + b) = sin a * cos b + sin b * cos a
+user=> (defn sin-plus [a b]
+  #_=>   (+ (* (Math/sin a) (Math/cos b))
+  #_=>      (* (Math/sin b) (Math/cos a))))
+#'user/sin-plus
+user=> (sin-plus 0.1 0.3)
+0.38941834230865047
+#+END_SRC
+
+**** 根據不同的進制輸入與輸出整數
+#+NAME:
+#+BEGIN_SRC
+user=> 2r00111100
+60
+user=> 2r11111111
+255
+user=> 16r0A
+10
+user=> 16r10
+16
+
+;; 輸出整數
+user=> (Integer/toString 10 2)
+"1010"
+user=> (Integer/toString 10 16)
+"a"
+#+END_SRC
+
+**** 計算數值集合的統計值
+#+NAME:
+#+BEGIN_SRC
+#'user/main
+user=> (defn mean [coll]
+  #_=>   (let [sum (apply + coll)
+  #_=>         count (count coll)]
+  #_=>     (if (pos? count)
+  #_=>       (/ sum count)
+  #_=>       0)))
+#'user/mean
+user=> (mean [1 2 3 4])
+5/2
+user=> (mean [1 2 3])
+2
+user=> (mean [1.1 2.2 3.3 4.4])
+2.75
+#+END_SRC
+
+**** 找出數值的中位數
+#+NAME:
+#+BEGIN_SRC
+user=> (defn median [coll]
+  #_=>   (let [sorted (sort coll)
+  #_=>         cnt (count sorted)
+  #_=>         halfway (int (/ cnt 2))]
+  #_=>     (if (odd? cnt)
+  #_=>       (nth sorted halfway)
+  #_=>       (let [bottom (dec halfway)
+  #_=>             bottom-val (nth sorted bottom)
+  #_=>             top-val (nth sorted halfway)]
+  #_=>         (mean [bottom-val top-val])))))
+#'user/median
+user=> (median [1 3 4 2 5])
+3
+user=> (median [2 0 1 4])
+3/2
+#+END_SRC
+
+**** 找出集合中最常出現的值
+#+NAME:
+#+BEGIN_SRC
+user=> (defn mode [coll]
+  #_=>   (let [freqs (frequencies coll)
+  #_=>         occurrences (group-by second freqs)
+  #_=>         modes (last (sort occurrences))
+  #_=>         modes (->> modes
+  #_=>                    second
+  #_=>                    (map first))]
+  #_=>     modes))
+#'user/mode
+user=> (mode [:walter :qq :walter :gg])
+(:walter)
+user=> (mode [:walter :qq :walter :gg :qq])
+(:walter :qq)
+#+END_SRC
