@@ -152,5 +152,112 @@ user=> (reduce #(str %1 (char %2))
 "Hello"
 #+END_SRC
 
+**** 格式化字串
+#+NAME:
+#+BEGIN_SRC
+;; 使用 str
+user=> (def my-name "walter")
+#'user/my-name
+user=> (str "My name is " my-name)
+"My name is walter"
+user=> (str "My age is " (+ 8 9))
+"My age is 17"
 
+;; 使用 format
+user=> (format "My age is %02d" (+ 8 9))
+"My age is 17"
+#+END_SRC
 
+**** 找尋字串
+#+NAME:
+#+BEGIN_SRC
+;; 所有連續的數字
+user=> (re-find #"\d+" "I am walter, i am 17 years old.")
+"17"
+
+;; 連續的單詞字符
+user=> (re-find #"\w+" "I am walter")
+"I"
+user=> (re-find #"\w+" "hello-world")
+"hello"
+user=> (re-matches #"\w+" "I am walter")
+nil
+user=> (re-matches #"\w+" "IAmWalter")
+"IAmWalter"
+#+END_SRC
+
+**** 正規表示法取值
+#+NAME:
+#+BEGIN_SRC
+user=> (re-seq #"\w+" "I am walter")
+("I" "am" "walter")
+user=> (re-seq #"\w+\s" "I am walter")
+("I " "am ")
+user=> (re-seq #"\d{2}-\d{8}" "My phone number is 02-12345678")
+("02-12345678")
+user=> (re-find #"(\d{2})-(\d{8})" "My phone number is 02-12345678")
+["02-12345678" "02" "12345678"]
+#+END_SRC
+
+**** 對字串查找和替換
+#+NAME:
+#+BEGIN_SRC
+user=> (clojure.string/replace "I am 20 years old" "20" "18")
+"I am 18 years old"
+user=> (clojure.string/replace "I am 17 years old, not 18." #"(\d+)" "xx")
+"I am xx years old, not xx."
+#+END_SRC
+
+**** 將字串切成部份
+#+NAME:
+#+BEGIN_SRC
+user=> (clojure.string/split "I,am,walter" #",")
+["I" "am" "walter"]
+user=> (clojure.string/split "I am walter" #"\s+")
+["I" "am" "walter"]
+
+;; 設置 limit
+user=> (clojure.string/split "I am walter" #"\s+" 1)
+["I am walter"]
+user=> (clojure.string/split "I am walter" #"\s+" 2)
+["I" "am walter"]
+user=> (clojure.string/split "I am walter" #"\s+" 100)
+#+END_SRC
+
+**** 在字串，符號和關鍵字間轉換
+#+NAME:
+#+BEGIN_SRC
+;; 字串轉符號
+user=> (symbol "vaild?")
+vaild?
+
+;; 符號轉字串
+user=> (str 'vaild?)
+"vaild?"
+
+;; 關鍵字轉字串
+user=> (name :wonderful)
+"wonderful"
+
+;; 關鍵字轉字串包含冒號
+user=> (str :wonderful)
+":wonderful"
+
+;; 符號或字串轉成關鍵字
+user=> (keyword "wonderful")
+:wonderful
+user=> (keyword 'wonderful)
+:wonderful
+
+;; 關鍵字轉成符號
+user=> (symbol (name :wonderful))
+wonderful
+
+;; 取得關鍵字名字部份
+user=> (name :user/vaild?)
+"vaild?"
+
+;; 取得命名空間
+user=> (namespace :user/vaild?)
+"user"
+#+END_SRC
