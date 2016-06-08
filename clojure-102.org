@@ -487,3 +487,231 @@ user=> (java.util.UUID/randomUUID)
 #+END_SRC
 
 *** 日期
+**** 得到當前日期與時間
+#+NAME:
+#+BEGIN_SRC
+user=> (java.util.Date.)
+#inst "2016-06-08T14:14:39.039-00:00"
+user=> (java.util.Date.)
+#inst "2016-06-08T14:14:43.539-00:00"
+
+;; unix time
+user=> (System/currentTimeMillis)
+1465395385407
+user=> (System/currentTimeMillis)
+1465395387258
+#+END_SRC
+
+**** 用字面值來表示日期
+#+NAME:
+#+BEGIN_SRC
+user=> (def walter-birthday #inst "1990-02-17T03:00:00.000-00:00")
+#'user/walter-birthday
+user=> (println walter-birthday)
+#inst "1990-02-17T03:00:00.000-00:00"
+nil
+#+END_SRC
+
+**** 利用 clj-time 解析日期和時間
+#+NAME:
+#+BEGIN_SRC
+;; 先在依賴中加入 clj-time "0.6.0"
+;; 解析 MM/dd/yy 這樣的日期
+user=> (require '[clj-time.format :as tf])
+nil
+user=> (def government-forms-date (tf/formatter "MM/dd/yy"))
+#'user/government-forms-date
+user=> (tf/parse government-forms-date "06/08/16")
+#object[org.joda.time.DateTime 0x65399f04 "2016-06-08T00:00:00.000Z"]
+user=> (tf/parse wonky-format "10:34:25 on 2016-06-08")
+#object[org.joda.time.DateTime 0x4c2cb482 "2016-06-08T10:34:25.000Z"]
+#+END_SRC
+
+**** 利用 clj-time 格式化日期
+#+NAME:
+#+BEGIN_SRC
+user=> (require '[clj-time.format :as tf])
+nil
+user=> (require '[clj-time.core :as t])
+nil
+user=> (tf/unparse (tf/formatters :date) (t/now))
+"2016-06-08"
+user=> (def my-format (tf/formatter "MMM d, yyyy 'at' hh:mm"))
+#'user/my-format
+user=> (tf/unparse my-format (t/now))
+"六月 8, 2016 at 02:41"
+#+END_SRC
+
+**** 比較日期
+#+NAME:
+#+BEGIN_SRC
+user=> (defn now [] (java.util.Date.))
+#'user/now
+user=> (def one-second-ago (now))
+#'user/one-second-ago
+user=> (Thread/sleep 1000)
+nil
+;; 現在比一秒前大 (1)
+user=> (compare (now) one-second-ago)
+1
+;; 一秒前比現在小 (1)
+user=> (compare one-second-ago (now))
+-1
+;; 相等用 0 表示
+user=> (compare one-second-ago one-second-ago)
+0
+#+END_SRC
+
+**** 計算時間間隔的長度
+#+NAME:
+#+BEGIN_SRC
+user=> (require '[clj-time.core :as t])
+nil
+
+;; 計算 6月1日 到今天之間的間隔
+user=> (def since-jun-first (t/interval (t/date-time 2016 06 01) (t/now)))
+#'user/since-jun-first
+
+user=> since-jun-first
+#object[org.joda.time.Interval 0x7aa4807 "2016-06-01T00:00:00.000Z/2016-06-08T14:54:57.971Z"]
+
+;; 計算天數
+user=> (t/in-days since-jun-first)
+7
+
+;; 計算登月以來的年數
+user=> (t/in-years (t/interval (t/date-time 1969 07 20) (t/now)))
+46
+
+;; 計算 2016-06-01 到 2016-06-07 之間的天數
+user=> (t/in-days (t/interval (t/date-time 2016 06 01)
+  #_=>                        (t/date-time 2016 06 07)))
+6
+#+END_SRC
+
+**** 生成一系列的時間
+#+NAME:
+#+BEGIN_SRC
+user=> (require '[clj-time.core :as time])
+nil
+user=> (require '[clj-time.periodic :as time-period])
+nil
+user=> (defn time-range
+  #_=>   "Return a lazy sequence of DateTimes from start to end, incremented
+  #_=>    by 'step' units of time."
+  #_=>   [start end step]
+  #_=>   (let [inf-range (time-period/periodic-seq start step)
+  #_=>         below-end? (fn [t] (time/within? (time/interval start end) t))]
+  #_=>     (take-while below-end? inf-range)))
+#'user/time-range
+user=> (def months-of-the-year (time-range (time/date-time 2015 01)
+  #_=>                                     (time/date-time 2016 01)
+  #_=>                                     (time/months 1)))
+#'user/months-of-the-year
+user=> (realized? months-of-the-year)
+false
+user=> (count months-of-the-year)
+12
+user=> (realized? months-of-the-year)
+true
+#+END_SRC
+
+**** 根據日期間的關係取得日期
+#+NAME:
+#+BEGIN_SRC
+;; 1.day.from_now
+user=> (require '[clj-time.core :as t])
+nil
+user=> (-> 1
+  #_=>   t/days
+  #_=>   t/from-now)
+#object[org.joda.time.DateTime 0x63e58a8b "2016-06-09T15:31:36.906Z"]
+
+;; 3.days.ago
+user=> (-> 3
+  #_=>   t/days
+  #_=>   t/ago)
+#object[org.joda.time.DateTime 0x4f8e4f18 "2016-06-05T15:33:20.671Z"]
+
+;; 1.years.from_now
+user=> (t/plus (t/now) (t/years 1))
+#object[org.joda.time.DateTime 0x1a628949 "2017-06-08T15:34:37.202Z"]
+
+;; some_date - 3.years
+user=> (def some-date (t/date-time 2016 04 01))
+#'user/some-date
+user=> (t/minus some-date (t/years 3))
+#object[org.joda.time.DateTime 0x4b3315c7 "2013-04-01T00:00:00.000Z"]
+#+END_SRC
+
+**** 處理時區
+#+NAME:
+#+BEGIN_SRC
+;; 我的生日，在正確的時區
+user=> (require '[clj-time.core :as t])
+nil
+user=> (def my-date (t/from-time-zone (t/date-time 1990 02 17 03)
+  #_=>                                (t/time-zone-for-offset +8)))
+#'user/my-date
+user=> my-date
+#object[org.joda.time.DateTime 0x240d0e57 "1990-02-17T03:00:00.000+08:00"]
+
+;; 我出生時 Asia/Taipei 是什麼時間
+user=> (def taiwan-my-date
+  #_=>   (t/to-time-zone my-date (t/time-zone-for-id "Asia/Taipei")))
+#'user/taiwan-my-date
+user=> taiwan-my-date
+#object[org.joda.time.DateTime 0x24bf6f "1990-02-17T03:00:00.000+08:00"]
+user=> (compare taiwan-my-date my-date)
+0
+#+END_SRC
+
+**** 將 Unix time 轉換成 Date 對象
+#+NAME:
+#+BEGIN_SRC
+user=> (defn from-unix-time
+  #_=>   "Return a Java Date object from a Unix time representation expressed in whole seconds."
+  #_=>   [unix-time]
+  #_=>   (java.util.Date. unix-time))
+#'user/from-unix-time
+user=> (from-unix-time 1465395387258)
+#inst "2016-06-08T14:16:27.258-00:00"
+
+;; use clj-time
+user=> (require '[clj-time.coerce :as timec])
+nil
+user=> (defn datetime-from-unix-time
+  #_=>   "Return a DateTime object from a Unix time representation expressed in whole seconds."
+  #_=>   [unix-time]
+  #_=>   (timec/from-long unix-time))
+#'user/datetime-from-unix-time
+user=> (datetime-from-unix-time 1465395387258)
+#object[org.joda.time.DateTime 0x3aa4be4c "2016-06-08T14:16:27.258Z"]
+#+END_SRC
+
+**** 將 Date 對象轉換成 Unix time
+#+NAME:
+#+BEGIN_SRC
+user=> (defn to-unix-time
+  #_=>   "Returns a Unix time representation expressed in whole seconds given a java.util.Date."
+  #_=>   [date]
+  #_=>   (.getTime date))
+#'user/to-unix-time
+user=> (def date (read-string "#inst \"2016-06-08T10:00:00.000-00:00\""))
+#'user/date
+user=> (to-unix-time date)
+1465380000000
+
+;; use clj-time
+user=> (require '[clj-time.coerce :as timec])
+nil
+user=> (defn datetime-to-unix-time
+  #_=>   "Returns a Unix time representation expressed in whole seconds given a DateTime."
+  #_=>   [datetime]
+  #_=>   (timec/to-long datetime))
+#'user/datetime-to-unix-time
+user=> (def datetime (clj-time.core/date-time 2016 06 8 10 00))
+#'user/datetime
+user=> (datetime-to-unix-time datetime)
+1465380000000
+#+END_SRC
