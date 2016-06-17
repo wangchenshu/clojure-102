@@ -715,3 +715,213 @@ user=> (def datetime (clj-time.core/date-time 2016 06 8 10 00))
 user=> (datetime-to-unix-time datetime)
 1465380000000
 #+END_SRC
+
+** 複合數據
+
+*** 創建列表
+#+NAME:
+#+BEGIN_SRC
+user=> '(:a \b "c")
+(:a \b "c")
+user=> (list :a \b "c")
+(:a \b "c")
+
+; 小提醒
+user=> (def a-num 2)
+#'user/a-num
+user=> '(a-num 3 4)
+(a-num 3 4)
+user=> (list a-num 3 4)
+(2 3 4)
+
+#+END_SRC
+
+*** 從已有的數據結構創建列表
+#+NAME:
+#+BEGIN_SRC
+
+user=> (apply list [1 2 3 4 5])
+(1 2 3 4 5)
+
+; 小提醒
+; 注意它的副作用，會顛倒原來的集合順序，但快在速度
+user=> (into '() [1 2 3 4 5])
+(5 4 3 2 1)
+
+#+END_SRC
+
+*** 在列表中加一個元素
+#+NAME:
+#+BEGIN_SRC
+user=> (conj '(1 2 3) 4)
+(4 1 2 3)
+user=> (conj (list 1 2 3) 4)
+(4 1 2 3)
+#+END_SRC
+
+*** 從列表中移除一個元素
+#+NAME:
+#+BEGIN_SRC
+user=> (pop '(1 2 3))
+(2 3)
+user=> (rest '(1 2 3))
+(2 3)
+; but
+user=> (pop '())
+
+IllegalStateException Can't pop empty list  clojure.lang.PersistentList$EmptyList.pop (PersistentList.java:209)
+
+user=> (rest '())
+()
+#+END_SRC
+
+*** 測試是否為列表
+#+NAME:
+#+BEGIN_SRC
+user=> (list? '(1 2 3))
+true
+user=> (list? (list 1 2 3))
+true
+user=> (list? (range 3))
+false
+user=> (type (range 3))
+clojure.lang.LongRange
+#+END_SRC
+
+*** 創建向量
+#+NAME:
+#+BEGIN_SRC
+user=> [1 2 3]
+[1 2 3]
+user=> (vector 1 2 3)
+[1 2 3]
+#+END_SRC
+
+*** 從已有的數據結構創建向量
+#+NAME:
+#+BEGIN_SRC
+user=> (vec '(1 2 3))
+[1 2 3]
+user=> (vec #{1 2 3})
+[1 3 2]
+user=> (into [] '(1 2 3))
+[1 2 3]
+#+END_SRC
+
+*** 在向量中加一個元素
+#+NAME:
+#+BEGIN_SRC
+user=> (conj [1 2 3] 4)
+[1 2 3 4]
+
+; 但容易出錯，會有 IndexOutOfBoindsException
+user=> (assoc [1 2 3] 3 4)
+[1 2 3 4]
+#+END_SRC
+
+*** 從向量中移除一個元素
+#+NAME:
+#+BEGIN_SRC
+user=> (pop [1 2 3])
+[1 2]
+user=> (subvec [1 2 3] 1)
+[2 3]
+user=> (subvec [1 2 3 4 5] 1 3)
+[2 3]
+#+END_SRC
+
+*** 取得索引處的值
+#+NAME:
+#+BEGIN_SRC
+; 使用 nth
+user=> (nth [1 2 3 4] 2)
+3
+user=> (nth [1 2 3 4] 4)
+
+IndexOutOfBoundsException   clojure.lang.PersistentVector.arrayFor (PersistentVector.java:158)
+user=> (nth [1 2 3 4] 4 :not-found)
+:not-found
+
+; 將向量作為其索引的函數
+user=> (def v [1 2 3])
+#'user/v
+user=> (v 2)
+3
+
+; 使用 get
+user=> (get [1 2 3 4] 2)
+3
+user=> (get [1 2 3 4] 4)
+nil
+user=> (get [1 2 3 4] 4 :not-found)
+:not-found
+#+END_SRC
+
+*** 設罝索引處的值
+#+NAME:
+#+BEGIN_SRC
+user=> (assoc [1 2 3 4] 2 5)
+[1 2 5 4]
+user=> (assoc {:a 1 :b 2 :c 3 :d 4} :c 9)
+{:a 1, :b 2, :c 9, :d 4}
+user=> (assoc {:a 1 :b 2 :c 3 :d 4} :a 0 :c 9)
+{:a 0, :b 2, :c 9, :d 4}
+#+END_SRC
+
+*** 創建集合
+#+NAME:
+#+BEGIN_SRC
+user=> #{1 2 3}
+#{1 3 2}
+
+; 重覆值
+user=> #{1 2 3 3}
+
+IllegalArgumentException Duplicate key: 3  clojure.lang.PersistentHashSet.createWithCheck (PersistentHashSet.java:68)
+
+; 使用 hash-set
+user=> (hash-set 1 2 3)
+#{1 3 2}
+user=> (apply hash-set [1 2 3])
+#{1 3 2}
+
+; 使用 set
+user=> (set "hello")
+#{\e \h \l \o}
+
+; 利用 into
+user=> (into #{1 2} [3 4])
+#{1 4 3 2}
+
+; 用 sorted-set
+user=> (sorted-set 4 3 2 1)
+#{1 2 3 4}
+#+END_SRC
+
+*** 在集合中加或移除元素
+#+NAME:
+#+BEGIN_SRC
+; 加
+user=> (conj #{1 2 3} 4)
+#{1 4 3 2}
+user=> (conj #{1 2 3} 4 5)
+#{1 4 3 2 5}
+
+; 移除
+user=> (disj #{1 2 3 4 5} 3)
+#{1 4 2 5}
+user=> (disj #{1 2 3 4 5} 3 5)
+#{1 4 2}
+#+END_SRC
+
+*** 測試集成員
+#+NAME:
+#+BEGIN_SRC
+; 用 contains? 檢查
+user=> (contains? #{1 2 3 4} 3)
+true
+user=> (contains? #{1 2 3 4} 5)
+false
+#+END_SRC
+
+*** 使用集操作
