@@ -959,3 +959,357 @@ false
 user=> (clojure.set/superset? #{1 2 3 4} #{3 4})
 true
 #+END_SRC
+
+*** 創建映射表
+#+NAME:
+#+BEGIN_SRC
+user=> {:name "walter" :age 17}
+{:name "walter", :age 17}
+
+user=> (array-map :name "walter" :age 17)
+{:name "walter", :age 17}
+
+user=> (sorted-map :n1 1 :n2 2)
+{:n1 1, :n2 2}
+
+;; sorted-map-by
+user=> (sorted-map-by #(< (count %1) (count %2))
+  #_=>                "address" "Taipei"
+  #_=>                "name" "Walter"
+  #_=>                "age" 17)
+{"age" 17, "name" "Walter", "address" "Taipei"}
+#+END_SRC
+
+*** 從映射表中取得值
+#+NAME:
+#+BEGIN_SRC
+;; use get
+user=> (get {:age 17, :name "Walter", :address "Taipei"} :name)
+"Walter"
+user=> (get {:age 17, :name "Walter", :address "Taipei"} :age)
+17
+user=> (get {:age 17, :name "Walter", :address "Taipei"} :address)
+"Taipei"
+user=> (get {:age 17, :name "Walter", :address "Taipei"} :last-name)
+nil
+user=> (get {:age 17, :name "Walter", :address "Taipei"} :last-name "not-found")
+"not-found"
+
+;; 用 keyword 做為函數
+user=> (:name {:age 17, :name "Walter", :address "Taipei"})
+"Walter"
+user=> (:age {:age 17, :name "Walter", :address "Taipei"})
+17
+user=> (:address {:age 17, :name "Walter", :address "Taipei"})
+"Taipei"
+user=> (:last-name {:age 17, :name "Walter", :address "Taipei"} "not-found")
+"not-found"
+
+;; 用 map 本身做為函數
+user=> (def info {:age 17, :name "Walter", :address "Taipei"})
+#'user/info
+user=> info
+{:age 17, :name "Walter", :address "Taipei"}
+user=> (info :name)
+"Walter"
+user=> (info :address)
+"Taipei"
+user=> (info :age)
+17
+user=> (info :last-name "not-found")
+"not-found"
+
+;; 查找嵌套的 map, 使用 get-in
+user=> (def info {:age 17, :name {:first-name "Walter", :last-name "Wang"}, :address "Taipei"})
+#'user/info
+user=> info
+{:age 17, :name {:first-name "Walter", :last-name "Wang"}, :address "Taipei"}
+user=> (get-in info [:name :first-name])
+"Walter"
+user=> (get-in info [:name :last-name])
+"Wang"
+#+END_SRC
+
+*** 從映射表中取得多個 keyword
+#+NAME:
+#+BEGIN_SRC
+;; 使用 vals 和 select-keys (如果順序不重要)
+user=> (def fruit {:apple 2, :orange 4, :banana 1})
+#'user/fruit
+user=> fruit
+{:apple 2, :orange 4, :banana 1}
+user=> (reduce + (vals (select-keys fruit [:apple :banana])))
+3
+user=> (reduce + (vals (select-keys fruit [:banana :orange])))
+5
+
+;; 使用 juxt (如果順序重要)
+user=> ((juxt :apple :banana) fruit)
+[2 1]
+user=> ((juxt :banana :orange) fruit)
+[1 4]
+#+END_SRC
+
+*** 設置映射表中的鍵
+#+NAME:
+#+BEGIN_SRC
+;; assoc
+user=> (def info {:age 17, :name {:first-name "Walter", :last-name "Wang"}, :address "Taipei"})
+#'user/info
+user=> info
+{:age 17, :name {:first-name "Walter", :last-name "Wang"}, :address "Taipei"}
+
+user=> (assoc info :address "New Taipei City" :age 18)
+{:age 18, :name {:first-name "Walter", :last-name "Wang"}, :address "New Taipei City"}
+
+user=> (assoc info :address "New Taipei City" :age 18 :height 170)
+{:age 18, :name {:first-name "Walter", :last-name "Wang"}, :address "New Taipei City", :height 170}
+
+;; dissoc
+user=> (dissoc info :address)
+{:age 17, :name {:first-name "Walter", :last-name "Wang"}}
+
+;; assoc-in
+user=> (assoc-in info [:name :last-name] "Blyess")
+{:age 17, :name {:first-name "Walter", :last-name "Blyess"}, :address "Taipei"}
+
+;; update-in
+user=> (update-in info [:name :last-name] str "Blyess")
+{:age 17, :name {:first-name "Walter", :last-name "WangBlyess"}, :address "Taipei"}
+
+user=> (update-in {} [:name :last-name] str "Blyess")
+{:name {:last-name "Blyess"}}
+#+END_SRC
+
+*** 用複合值做為映射表的 keyword
+#+NAME:
+#+BEGIN_SRC
+;; 建立棋盤
+user=> (def chessboard {[:a 5] [:white :king]
+  #_=>                  [:a 4] [:white :pawn]
+  #_=>                  [:d 4] [:black :king]})
+#'user/chessboard
+user=> chessboard
+{[:a 5] [:white :king], [:a 4] [:white :pawn], [:d 4] [:black :king]}
+user=> (chessboard [:a 5])
+[:white :king]
+
+;; 移動棋子的方法，dissoc 舊的位置，assoc 新的位置
+user=> (defn move
+  #_=>   "Given a map representing a chessboard, move the piece at src to dest"
+  #_=>   [board source dest]
+  #_=>   (-> board
+  #_=>       (dissoc source)
+  #_=>       (assoc dest (board source))))
+#'user/move
+
+;; 移動
+user=> (move chessboard [:a 5] [:a 4])
+{[:a 4] [:white :king], [:d 4] [:black :king]}
+
+;; 有一組函數，要能夠指定移動每個函數的 "權重"，
+;; 並在函數被調用時，用返回值乘以對應的權重.
+;; 一種容易實現的方法是將函數和權重保存在映射表中，以函數作為鍵:
+
+user=> (def plus-two (partial + 2))
+#'user/plus-two
+user=> (def plus-three (partial + 3))
+#'user/plus-three
+user=> (def weight-map {plus-two 1.0
+  #_=>                  plus-three 0.8})
+
+user=> (defn apply-weighted
+  #_=>   "Given a weight map, a function, and args, applies the function
+  #_=>    to the args, multiplying the result the by the weighting for the
+  #_=>    function. If the weight map does not specify a weight for the
+  #_=>    function, a default of 1.0 is used."
+  #_=>   [weight-map f & args]
+  #_=>   (* (get weight-map f 1.0)
+  #_=>      (apply f args)))
+#'user/apply-weighted
+
+user=> (apply-weighted weight-map plus-two 2)
+4.0
+user=> (apply-weighted weight-map plus-three 1)
+3.2
+#+END_SRC
+
+*** 將映射表作為序列 (或反過來)
+#+NAME:
+#+BEGIN_SRC
+user=> (seq {:a 1, :b 2, :c 3, :d 4})
+([:a 1] [:b 2] [:c 3] [:d 4])
+
+;; 要從序列創建映射表，可以利用 conj 函數的一個特點，
+;; 即它在應用於映射表時，可以接受2個元素的向量，作為健值時，
+;; 將其加到映射表中.
+user=> (def my-map {:a 1, :b 2})
+#'user/my-map
+user=> (conj my-map [:c 3])
+{:a 1, :b 2, :c 3}
+
+;; 因為 into 函數反覆應用 conj，將元素從一個序列放到一個集合中，
+;; 所以可以用它將鍵值對序列轉換成一個映射表.
+user=> (into {} [[:a 1] [:b 2] [:c 3]])
+{:a 1, :b 2, :c 3}
+
+;; 從2個序列構造一個映射表，一個包含鍵，一個包含值。
+;; 這就是 zipmap 函數的功能.
+;; 給定2個序列，鍵來自第一個參數序列，值來自第二個參數序列:
+user=> (zipmap [:a :b :c] [1 2 3])
+{:a 1, :b 2, :c 3}
+
+;; 排序
+user=> (seq (hash-map :a 1 :b 2 :c 3 :d 4))
+([:c 3] [:b 2] [:d 4] [:a 1])
+user=> (seq (sorted-map :a 1 :b 2 :c 3 :d 4))
+([:a 1] [:b 2] [:c 3] [:d 4])
+
+;; MapEntry 提供了 key 和 val 函數，用於取得條目的鍵和值
+user=> (def entry (first {:a 1, :b 2}))
+#'user/entry
+user=> (class entry)
+clojure.lang.MapEntry
+user=> (key entry)
+:a
+user=> (val entry)
+1
+#+END_SRC
+
+*** 對映射表應用函數
+#+NAME:
+#+BEGIN_SRC
+user=> (defn map-keys
+  #_=>   "Given a map and a function, return the map resulting from applying
+  #_=>    the function to each key."
+  #_=>   [m f]
+  #_=>   (zipmap (map f (keys m)) (vals m)))
+
+user=> (map-keys {"a" 1 "b" 2} keyword)
+{:a 1, :b 2}
+
+user=> (defn map-vals
+  #_=>   "Given a map and a function, return the map resulting from applying
+  #_=>    the function to each value."
+  #_=>   [m f]
+  #_=>   (zipmap (keys m) (map f (vals m))))
+#'user/map-vals
+
+user=> (map-vals {:a 1, :b 2} inc)
+{:a 2, :b 3}
+
+user=> (defn map-kv
+  #_=>   "Given a map and a function of two arguments, returns the map
+  #_=>    resulting from applying the function to each of its entries.
+  #_=>    The provided function must return a pair (a two-element sequence.)"
+  #_=>   [m f]
+  #_=>   (into {} (map (fn [[k v]] (f k v)) m)))
+
+user=> (map-kv {"a" 1 "b" 2} (fn [k v] [(keyword k) (inc v)]))
+{:a 2, :b 3}
+
+user=> (defn map-kv2
+  #_=>   [m f]
+  #_=>   (into {} (map (fn [entry]
+  #_=>                  (f (key entry) (val entry)))
+  #_=>                m)))
+#'user/map-kv2
+user=> (map-kv2 {"a" 1 "b" 2} (fn [k v] [(keyword k) (inc v)]))
+{:a 2, :b 3}
+
+;; reduce-kv, clojure 1.4 加上的
+;; reduce-kv 接受三個參數，一個函數，一個初始值，一個關聯集合
+;; 注意，在函數的聲明中，下底線 (_) 取代了 key，這是 Clojure中的習慣用法，
+;; 命名函數體中實際上不會用到的參數。
+
+user=> (reduce-kv (fn [agg _ val]
+  #_=>              (+ agg val))
+  #_=>            0
+  #_=>            {:a 1, :b 2, :c 3})
+6
+
+;; 用 reduce-kv 重新定義
+user=> (defn map-kv
+  #_=>   [m f]
+  #_=>   (reduce-kv (fn [agg k v] (conj agg (f k v))) {} m))
+#'user/map-kv
+
+user=> (map-kv {:one 1, :two 2, :three 3} #(vector (-> %1 str (subs 1)) (inc %2)))
+{"one" 2, "two" 3, "three" 4}
+#+END_SRC
+
+*** 合併映射表
+#+NAME:
+#+BEGIN_SRC
+user=> (def a-fruit-counts {:apple 2, :orange 1})
+#'user/a-fruit-counts
+user=> (def b-fruit-counts {:banana 3})
+#'user/b-fruit-counts
+user=> (merge a-fruit-counts b-fruit-counts)
+{:apple 2, :orange 1, :banana 3}
+
+;; 如果有相同的鍵，將採用後面出現的映射
+user=> (def a-fruit-counts {:apple 2, :orange 1})
+#'user/a-fruit-counts
+user=> (def b-fruit-counts {:apple 4, :banana 3})
+#'user/b-fruit-counts
+user=> (merge a-fruit-counts b-fruit-counts)
+{:apple 4, :orange 1, :banana 3}
+
+;; 如果有相同的鍵，需要明確控制合併的策略，就用 merge-with
+;; 用 + 合併，求合
+user=> (merge-with + a-fruit-counts b-fruit-counts)
+{:apple 6, :orange 1, :banana 3}
+
+#+END_SRC
+
+*** 值的比較和排序
+#+NAME:
+#+BEGIN_SRC
+;; compare
+;; 如果第一個參數小於第二個參數，compare 就返回負數，
+;; 等於就返回 0，
+;; 大於就返回正數
+user=> (compare 2 1)
+1
+user=> (compare 1 2)
+-1
+user=> (compare 1 1)
+0
+
+;; sort
+user=> (sort > [2 1 5 3 4])
+(5 4 3 2 1)
+user=> (sort < [2 1 5 3 4])
+(1 2 3 4 5)
+
+user=> (sort #(< (count %1) (count %2)) ["55555" "4444" "333" "22" "1"])
+("1" "22" "333" "4444" "55555")
+user=> (sort #(> (count %1) (count %2)) ["55555" "4444" "333" "22" "1"])
+("55555" "4444" "333" "22" "1")
+#+END_SRC
+
+*** 從集合中移除重覆的元素
+#+NAME:
+#+BEGIN_SRC
+;; 用 set 強制將集合轉換成散列值
+user=> (set [:a :a :b :b :c])
+#{:c :b :a}
+
+;; 如果序列是無限的，或者需要保持順序，就用 distinct 返回一個 lazy-seq
+user=> (distinct [:a :a :b :b :c])
+(:a :b :c)
+#+END_SRC
+
+*** 檢查集合中是否包含幾個值中的一個
+#+NAME:
+#+BEGIN_SRC
+user=> (some #{1 2} (range 1 10))
+1
+user=> (some #{10} (range 1 10))
+nil
+user=> (if (some #{1 2} (range 1 10))
+  #_=>   :found
+  #_=>   :not-found)
+:found
+#+END_SRC
