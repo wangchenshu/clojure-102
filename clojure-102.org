@@ -726,7 +726,7 @@ user=> '(:a \b "c")
 user=> (list :a \b "c")
 (:a \b "c")
 
-; 小提醒
+;; 小提醒
 user=> (def a-num 2)
 #'user/a-num
 user=> '(a-num 3 4)
@@ -743,8 +743,8 @@ user=> (list a-num 3 4)
 user=> (apply list [1 2 3 4 5])
 (1 2 3 4 5)
 
-; 小提醒
-; 注意它的副作用，會顛倒原來的集合順序，但快在速度
+;; 小提醒
+;; 注意它的副作用，會顛倒原來的集合順序，但快在速度
 user=> (into '() [1 2 3 4 5])
 (5 4 3 2 1)
 
@@ -814,7 +814,7 @@ user=> (into [] '(1 2 3))
 user=> (conj [1 2 3] 4)
 [1 2 3 4]
 
-; 但容易出錯，會有 IndexOutOfBoindsException
+;; 但容易出錯，會有 IndexOutOfBoindsException
 user=> (assoc [1 2 3] 3 4)
 [1 2 3 4]
 #+END_SRC
@@ -833,7 +833,7 @@ user=> (subvec [1 2 3 4 5] 1 3)
 *** 取得索引處的值
 #+NAME:
 #+BEGIN_SRC
-; 使用 nth
+;; 使用 nth
 user=> (nth [1 2 3 4] 2)
 3
 user=> (nth [1 2 3 4] 4)
@@ -842,13 +842,13 @@ IndexOutOfBoundsException   clojure.lang.PersistentVector.arrayFor (PersistentVe
 user=> (nth [1 2 3 4] 4 :not-found)
 :not-found
 
-; 將向量作為其索引的函數
+;; 將向量作為其索引的函數
 user=> (def v [1 2 3])
 #'user/v
 user=> (v 2)
 3
 
-; 使用 get
+;; 使用 get
 user=> (get [1 2 3 4] 2)
 3
 user=> (get [1 2 3 4] 4)
@@ -874,26 +874,26 @@ user=> (assoc {:a 1 :b 2 :c 3 :d 4} :a 0 :c 9)
 user=> #{1 2 3}
 #{1 3 2}
 
-; 重覆值
+;; 重覆值
 user=> #{1 2 3 3}
 
 IllegalArgumentException Duplicate key: 3  clojure.lang.PersistentHashSet.createWithCheck (PersistentHashSet.java:68)
 
-; 使用 hash-set
+;; 使用 hash-set
 user=> (hash-set 1 2 3)
 #{1 3 2}
 user=> (apply hash-set [1 2 3])
 #{1 3 2}
 
-; 使用 set
+;; 使用 set
 user=> (set "hello")
 #{\e \h \l \o}
 
-; 利用 into
+;; 利用 into
 user=> (into #{1 2} [3 4])
 #{1 4 3 2}
 
-; 用 sorted-set
+;; 用 sorted-set
 user=> (sorted-set 4 3 2 1)
 #{1 2 3 4}
 #+END_SRC
@@ -901,13 +901,13 @@ user=> (sorted-set 4 3 2 1)
 *** 在集合中增加或移除元素
 #+NAME:
 #+BEGIN_SRC
-; 增加
+;; 增加
 user=> (conj #{1 2 3} 4)
 #{1 4 3 2}
 user=> (conj #{1 2 3} 4 5)
 #{1 4 3 2 5}
 
-; 移除
+;; 移除
 user=> (disj #{1 2 3 4 5} 3)
 #{1 4 2 5}
 user=> (disj #{1 2 3 4 5} 3 5)
@@ -917,7 +917,7 @@ user=> (disj #{1 2 3 4 5} 3 5)
 *** 測試集成員
 #+NAME:
 #+BEGIN_SRC
-; 用 contains? 檢查
+;; 用 contains? 檢查
 user=> (contains? #{1 2 3 4} 3)
 true
 user=> (contains? #{1 2 3 4} 5)
@@ -925,3 +925,37 @@ false
 #+END_SRC
 
 *** 使用集操作
+#+NAME:
+#+BEGIN_SRC
+;; union
+user=> (clojure.set/union #{1 2 3} #{2 3} #{3})
+#{1 3 2}
+user=> (clojure.set/union #{:1 :2 :3} #{:2 :3} #{:3})
+#{:1 :2 :3}
+
+;; intersection
+user=> (clojure.set/intersection #{:1 :2 :3} #{:2 :3} #{:3})
+#{:3}
+user=> (clojure.set/intersection #{1 2 3} #{2 3} #{3})
+#{3}
+
+;; difference
+user=> (clojure.set/difference #{1 2 3 4} #{2 3 5} #{3 6})
+#{1 4}
+user=> (clojure.set/difference #{:1 :2 :3 :4} #{:2 :3 :5} #{:3 :6})
+#{:4 :1}
+
+;; subset?
+;; Is set1 a superset of set2?
+ser=> (clojure.set/subset? #{3 4} #{1 2 3 4})
+true
+user=> (clojure.set/subset? #{:3 :5} #{:1 :2 :3 :4})
+false
+
+;; superset?
+;; Is set1 a superset of set2?
+user=> (clojure.set/superset? #{3 4} #{1 2 3 4})
+false
+user=> (clojure.set/superset? #{1 2 3 4} #{3 4})
+true
+#+END_SRC
